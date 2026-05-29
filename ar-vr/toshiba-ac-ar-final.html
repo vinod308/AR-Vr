@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="description" content="See Toshiba Split AC on your wall before you buy. View in 3D and place in your room using Augmented Reality — works on Android and iPhone, no app needed.">
+<meta property="og:title" content="Toshiba AC — View on Your Wall">
+<meta property="og:description" content="Place the Toshiba Split AC in your room using AR. Works on Android &amp; iPhone — no app needed.">
+<meta property="og:type" content="website">
 <title>Toshiba AC — View on Your Wall</title>
+
+<!-- Preconnect to external domains for faster load -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://ajax.googleapis.com">
+<link rel="preconnect" href="https://api.qrserver.com">
 
 <!-- Google model-viewer — handles Android AR (Scene Viewer) + iPhone AR (Quick Look) + 3D spin -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
@@ -551,13 +562,19 @@ model-viewer::part(default-ar-button) { display: none; }
 </div>
 
 <script>
-/* ══ QR via qrserver.com ══ */
+/* ══ QR via qrserver.com — cached to avoid repeated HTTP requests ══ */
+const _qrCache = {};
 function drawQR(canvas, url, size) {
+  const cacheKey = url + size;
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext("2d");
+  if (_qrCache[cacheKey]) {
+    ctx.drawImage(_qrCache[cacheKey], 0, 0, size, size);
+    return;
+  }
   ctx.fillStyle = "#e8f0f8"; ctx.fillRect(0,0,size,size);
   const img = new Image(); img.crossOrigin = "anonymous";
-  img.onload  = () => { ctx.clearRect(0,0,size,size); ctx.drawImage(img,0,0,size,size); };
+  img.onload  = () => { ctx.clearRect(0,0,size,size); ctx.drawImage(img,0,0,size,size); _qrCache[cacheKey] = img; };
   img.onerror = () => {
     ctx.clearRect(0,0,size,size);
     ctx.fillStyle="#1a3a5c"; ctx.fillRect(0,0,size,size);
@@ -591,56 +608,56 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ══ Mobile: show AR screen ══ */
+const mv = document.getElementById("mv");
+const loading = document.getElementById("mv-loading");
+const arNotSupported = document.getElementById("ar-not-supported");
+
 function showARScreen() {
   show("ar-screen");
-  // Hide loading once model-viewer is ready
-  const mv = document.getElementById("mv");
-  const loading = document.getElementById("mv-loading");
   mv.addEventListener("load", () => {
     setTimeout(() => { loading.classList.add("fade"); setTimeout(() => loading.style.display="none", 500); }, 300);
   }, { once: true });
   // Also hide after 5s max in case event doesn't fire
   setTimeout(() => { loading.classList.add("fade"); setTimeout(() => loading.style.display="none", 500); }, 5000);
 
-  // Check AR support
+  // Check AR support — { once: true } prevents listener accumulation on repeat visits
   mv.addEventListener("ar-status", e => {
     if (e.detail.status === "failed") {
-      document.getElementById("ar-not-supported").style.display = "block";
-      setTimeout(() => document.getElementById("ar-not-supported").style.display="none", 6000);
+      arNotSupported.style.display = "block";
+      setTimeout(() => arNotSupported.style.display="none", 6000);
     }
-  });
+  }, { once: true });
 }
 
 function goBack() {
   show("mobile-landing");
   // Re-show loading for next visit
-  const loading = document.getElementById("mv-loading");
   loading.style.display = "flex"; loading.classList.remove("fade");
+  // Reset auto-rotate state to default
+  autoRotating = true;
+  mv.setAttribute("auto-rotate", "");
 }
 
 /* ══ AR launch ══ */
 function launchAR() {
-  const mv = document.getElementById("mv");
   if (mv.canActivateAR) {
     mv.activateAR();
   } else {
-    document.getElementById("ar-not-supported").style.display = "block";
-    setTimeout(() => document.getElementById("ar-not-supported").style.display="none", 5000);
+    arNotSupported.style.display = "block";
+    setTimeout(() => arNotSupported.style.display="none", 5000);
   }
 }
 
 /* ══ Camera controls ══ */
 let autoRotating = true;
 function resetCamera() {
-  document.getElementById("mv").cameraOrbit = "auto auto auto";
-  document.getElementById("mv").fieldOfView = "auto";
+  mv.cameraOrbit = "auto auto auto";
+  mv.fieldOfView = "auto";
 }
 function toggleAutoRotate() {
-  const mv = document.getElementById("mv");
   autoRotating = !autoRotating;
-  mv.setAttribute("auto-rotate", autoRotating ? "" : null);
-  if (!autoRotating) mv.removeAttribute("auto-rotate");
-  else mv.setAttribute("auto-rotate", "");
+  if (autoRotating) mv.setAttribute("auto-rotate", "");
+  else mv.removeAttribute("auto-rotate");
 }
 
 /* ══ Desktop QR modal ══ */
