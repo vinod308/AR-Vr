@@ -198,6 +198,21 @@ model-viewer::part(default-ar-button) { display: none; }
   line-height: 1.5; margin-top: 6px;
 }
 
+/* Manual view control pad */
+.view-pad {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 12px;
+}
+.vp-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 10px 2px; border-radius: 12px;
+  border: 1px solid rgba(55,138,221,0.25); background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.85); font-family: var(--font);
+  font-size: 9px; font-weight: 600; letter-spacing: 0.2px;
+  cursor: pointer; transition: transform 0.1s, background 0.12s; -webkit-user-select: none; user-select: none;
+}
+.vp-btn .ic { font-size: 18px; line-height: 1; }
+.vp-btn:active { background: rgba(55,138,221,0.32); transform: scale(0.93); }
+
 /* Loading overlay */
 #mv-loading {
   position: fixed; inset: 0; z-index: 200;
@@ -592,6 +607,16 @@ model-viewer::part(default-ar-button) { display: none; }
       <strong>Toshiba Split AC — Hi-Wall Unit</strong>
     </div>
 
+    <!-- Manual view controls -->
+    <div class="view-pad">
+      <button class="vp-btn" onclick="nudge(-30,0,0)"><span class="ic">⟲</span>Left</button>
+      <button class="vp-btn" onclick="nudge(30,0,0)"><span class="ic">⟳</span>Right</button>
+      <button class="vp-btn" onclick="nudge(0,-12,0)"><span class="ic">▲</span>Up</button>
+      <button class="vp-btn" onclick="nudge(0,12,0)"><span class="ic">▼</span>Down</button>
+      <button class="vp-btn" onclick="zoom(-0.3)"><span class="ic">＋</span>Zoom in</button>
+      <button class="vp-btn" onclick="zoom(0.3)"><span class="ic">－</span>Zoom out</button>
+    </div>
+
     <div class="ar-actions">
       <button class="ar-btn ar-btn-primary" id="ar-launch-btn" onclick="launchAR()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -607,7 +632,7 @@ model-viewer::part(default-ar-button) { display: none; }
         ⊙ Auto Rotate
       </button>
     </div>
-    <p class="controls-hint">Drag to rotate · Pinch to zoom · Two-finger twist to spin · Tap "Place on My Wall" for live AR</p>
+    <p class="controls-hint">Use the buttons above, or drag to rotate &amp; pinch to zoom · Tap "Place on My Wall" for live AR</p>
   </div>
 </div>
 
@@ -832,6 +857,21 @@ function toggleAutoRotate() {
   if (autoRotating) mv.setAttribute("auto-rotate", "");
   else mv.removeAttribute("auto-rotate");
 }
+
+/* Manual rotate / tilt / zoom via the control pad.
+   dTheta = left/right degrees, dPhi = up/down degrees, dRadius = zoom metres */
+function nudge(dTheta, dPhi, dRadius) {
+  if (!mv.getCameraOrbit) return;
+  if (autoRotating) toggleAutoRotate();          // stop the spin so manual control sticks
+  const o = mv.getCameraOrbit();                 // theta/phi in radians, radius in metres
+  let theta  = o.theta * 180 / Math.PI + (dTheta || 0);
+  let phi    = o.phi   * 180 / Math.PI + (dPhi   || 0);
+  let radius = o.radius + (dRadius || 0);
+  phi    = Math.min(Math.max(phi, 15), 105);     // clamp tilt so it can't flip under/over
+  radius = Math.min(Math.max(radius, 0.6), 3);   // clamp zoom range
+  mv.cameraOrbit = theta + "deg " + phi + "deg " + radius + "m";
+}
+function zoom(d) { nudge(0, 0, d); }
 
 /* ══ Desktop QR modal ══ */
 function openModal() {
