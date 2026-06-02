@@ -463,12 +463,15 @@ model-viewer::part(default-ar-button) { display: none; }
     </svg>
     View in My Room
   </button>
-  <p class="tip">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4">
-      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-    </svg>
-    Allow camera access when prompted
-  </p>
+  <div style="margin-top:16px;padding:12px 16px;border-radius:12px;background:rgba(55,138,221,0.1);border:1px solid rgba(55,138,221,0.25);text-align:left;max-width:300px;">
+    <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">How to place the AC on your wall:</p>
+    <p style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.7;margin:0;">
+      1. Allow camera when prompted<br>
+      2. Scene Viewer opens — briefly point phone <strong style="color:rgba(255,255,255,0.75);">down</strong> to scan the floor<br>
+      3. Then point at the <strong style="color:rgba(255,255,255,0.75);">wall</strong> — step back 1–2m<br>
+      4. Tap the wall to place · Pinch to resize
+    </p>
+  </div>
 </div>
 
 <!-- ══════ AR VIEWER SCREEN ══════ -->
@@ -500,6 +503,7 @@ model-viewer::part(default-ar-button) { display: none; }
       ar-modes="scene-viewer webxr quick-look"
       ar-scale="auto"
       ar-placement="wall"
+      scale="0.01 0.01 0.01"
       xr-environment
       camera-controls
       touch-action="none"
@@ -507,10 +511,8 @@ model-viewer::part(default-ar-button) { display: none; }
       auto-rotate
       auto-rotate-delay="2000"
       rotation-per-second="20deg"
-      min-camera-orbit="auto 0deg auto"
-      max-camera-orbit="auto 180deg auto"
-      min-field-of-view="10deg"
-      max-field-of-view="120deg"
+      min-field-of-view="25deg"
+      max-field-of-view="75deg"
       shadow-intensity="1.5"
       shadow-softness="0.9"
       exposure="1.1"
