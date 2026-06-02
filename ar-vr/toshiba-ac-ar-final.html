@@ -211,6 +211,74 @@ model-viewer::part(default-ar-button) { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .load-text { font-size: 13px; color: rgba(255,255,255,0.4); }
 
+/* ══ AR SESSION OVERLAY ══ */
+#ar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 150;
+  pointer-events: none; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding-bottom: 48px;
+}
+#ar-overlay.visible { display: flex; }
+
+.ar-overlay-card {
+  background: rgba(6,13,24,0.88); backdrop-filter: blur(16px);
+  border: 1px solid rgba(55,138,221,0.3); border-radius: 20px;
+  padding: 18px 24px; max-width: 320px; width: 88%;
+  text-align: center; pointer-events: auto;
+  box-shadow: 0 8px 36px rgba(0,0,0,0.5);
+}
+.ar-overlay-icon { font-size: 28px; margin-bottom: 8px; }
+.ar-overlay-title {
+  font-size: 15px; font-weight: 700; color: white; margin-bottom: 4px;
+}
+.ar-overlay-sub {
+  font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.55;
+}
+
+/* scanning pulse ring */
+.scan-ring {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 2px solid rgba(55,138,221,0.6);
+  margin: 0 auto 12px;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  animation: scan-pulse 1.8s ease-in-out infinite;
+}
+.scan-ring::after {
+  content: ""; position: absolute; inset: -10px; border-radius: 50%;
+  border: 1px solid rgba(55,138,221,0.25);
+  animation: scan-pulse 1.8s ease-in-out infinite 0.4s;
+}
+@keyframes scan-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(55,138,221,0.4); }
+  50%      { box-shadow: 0 0 0 14px rgba(55,138,221,0); }
+}
+
+.tap-hint-dot {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(55,138,221,0.2); border: 2px solid var(--blue2);
+  margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; animation: tap-bounce 1.2s ease-in-out infinite;
+}
+@keyframes tap-bounce {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.12); }
+}
+
+.placed-check {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(74,222,128,0.18); border: 2px solid #4ade80;
+  margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+
+.ar-reposition-btn {
+  margin-top: 12px; padding: 9px 20px; border-radius: 10px; border: none;
+  background: rgba(55,138,221,0.25); color: var(--blue2);
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.ar-reposition-btn:active { background: rgba(55,138,221,0.45); }
+
 /* AR not supported notice */
 #ar-not-supported {
   display: none; position: fixed; bottom: 200px; left: 16px; right: 16px; z-index: 60;
@@ -428,18 +496,23 @@ model-viewer::part(default-ar-button) { display: none; }
       ar-modes="scene-viewer webxr quick-look"
       ar-scale="auto"
       ar-placement="wall"
+      xr-environment
       camera-controls
-      touch-action="pan-y"
-      interaction-prompt="auto"
+      interaction-prompt="when-focused"
+      interaction-prompt-threshold="500"
       auto-rotate
       auto-rotate-delay="2000"
       rotation-per-second="20deg"
-      shadow-intensity="1.2"
-      shadow-softness="0.8"
+      min-camera-orbit="auto 0deg auto"
+      max-camera-orbit="auto 180deg auto"
+      min-field-of-view="10deg"
+      max-field-of-view="120deg"
+      shadow-intensity="1.5"
+      shadow-softness="0.9"
       exposure="1.1"
-      environment-image="neutral"
+      environment-image="legacy"
       tone-mapping="aces"
-      style="width:100%;flex:1;min-height:300px;background:transparent;--poster-color:transparent;"
+      style="width:100%;flex:1;min-height:300px;background:transparent;--poster-color:transparent;touch-action:none;"
       loading="eager"
     >
       <!-- Custom AR button -->
@@ -471,6 +544,34 @@ model-viewer::part(default-ar-button) { display: none; }
     </model-viewer>
   </div>
 
+  <!-- AR session overlay: scanning / tap-to-place / placed -->
+  <div id="ar-overlay">
+    <!-- State: scanning -->
+    <div id="ar-state-scan" class="ar-overlay-card" style="display:none;">
+      <div class="scan-ring">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--blue2)" stroke-width="2">
+          <path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4z"/>
+          <path d="M16 16h1v1M19 16v1h-1M16 19h1v1M19 19v1h-1"/>
+        </svg>
+      </div>
+      <div class="ar-overlay-title">Scanning for a Wall…</div>
+      <div class="ar-overlay-sub">Slowly tilt and move your phone toward a flat vertical surface. Keep at arm's length for best results.</div>
+    </div>
+    <!-- State: tap to place -->
+    <div id="ar-state-tap" class="ar-overlay-card" style="display:none;">
+      <div class="tap-hint-dot">👆</div>
+      <div class="ar-overlay-title">Wall Detected — Tap to Place</div>
+      <div class="ar-overlay-sub">Tap anywhere on the detected wall surface to place the Toshiba AC.</div>
+    </div>
+    <!-- State: placed -->
+    <div id="ar-state-placed" class="ar-overlay-card" style="display:none;">
+      <div class="placed-check">✓</div>
+      <div class="ar-overlay-title">AC Placed on Your Wall</div>
+      <div class="ar-overlay-sub">Pinch to resize · Two-finger rotate · Drag to reposition</div>
+      <button class="ar-reposition-btn" onclick="repositionAR()">↩ Move to a Different Spot</button>
+    </div>
+  </div>
+
   <!-- AR not supported notice -->
   <div id="ar-not-supported">
     ⚠️ AR is not supported on this device/browser. You can still view and rotate the 3D model above.
@@ -499,7 +600,7 @@ model-viewer::part(default-ar-button) { display: none; }
         ⊙ Auto Rotate
       </button>
     </div>
-    <p class="controls-hint">Drag to rotate · Pinch to zoom · Tap "Place on My Wall" for live AR</p>
+    <p class="controls-hint">Drag to rotate · Pinch to zoom · Two-finger twist to spin · Tap "Place on My Wall" for live AR</p>
   </div>
 </div>
 
@@ -629,29 +730,62 @@ window.addEventListener("DOMContentLoaded", () => {
 const mv = document.getElementById("mv");
 const loading = document.getElementById("mv-loading");
 const arNotSupported = document.getElementById("ar-not-supported");
+const arOverlay = document.getElementById("ar-overlay");
+const arStateScan = document.getElementById("ar-state-scan");
+const arStateTap = document.getElementById("ar-state-tap");
+const arStatePlaced = document.getElementById("ar-state-placed");
+
+/* Show/hide the correct AR guidance card */
+function setAROverlayState(state) {
+  arStateScan.style.display   = state === "scan"   ? "block" : "none";
+  arStateTap.style.display    = state === "tap"    ? "block" : "none";
+  arStatePlaced.style.display = state === "placed" ? "block" : "none";
+  arOverlay.classList.toggle("visible", state !== null);
+}
 
 function showARScreen() {
   show("ar-screen");
   mv.addEventListener("load", () => {
     setTimeout(() => { loading.classList.add("fade"); setTimeout(() => loading.style.display="none", 500); }, 300);
   }, { once: true });
-  // Also hide after 5s max in case event doesn't fire
   setTimeout(() => { loading.classList.add("fade"); setTimeout(() => loading.style.display="none", 500); }, 5000);
 
-  // Check AR support — { once: true } prevents listener accumulation on repeat visits
+  /* Persistent ar-status listener — covers every AR session opened from this page */
   mv.addEventListener("ar-status", e => {
-    if (e.detail.status === "failed") {
+    const status = e.detail.status;
+    if (status === "session-started") {
+      /* AR session just opened: show scanning guidance */
+      setAROverlayState("scan");
+    } else if (status === "object-placed") {
+      /* Model anchored to wall: show interaction hints */
+      setAROverlayState("placed");
+    } else if (status === "not-presenting") {
+      /* User exited AR — dismiss overlay */
+      setAROverlayState(null);
+    } else if (status === "failed") {
+      setAROverlayState(null);
       arNotSupported.style.display = "block";
       setTimeout(() => arNotSupported.style.display="none", 6000);
     }
-  }, { once: true });
+  });
+
+  /* ar-tracking fires on WebXR when tracking quality changes */
+  mv.addEventListener("ar-tracking", e => {
+    const state = e.detail.state;
+    if (state === "tracking") {
+      /* Good surface found — invite user to tap */
+      setAROverlayState("tap");
+    } else if (state === "limited" || state === "not-tracking") {
+      /* Lost tracking — back to scanning guidance */
+      setAROverlayState("scan");
+    }
+  });
 }
 
 function goBack() {
   show("mobile-landing");
-  // Re-show loading for next visit
   loading.style.display = "flex"; loading.classList.remove("fade");
-  // Reset auto-rotate state to default
+  setAROverlayState(null);
   autoRotating = true;
   mv.setAttribute("auto-rotate", "");
 }
@@ -661,7 +795,6 @@ function launchAR() {
   if (mv.canActivateAR) {
     mv.activateAR();
   } else if (!mv.loaded) {
-    // Model still loading — wait then retry once
     mv.addEventListener("load", () => {
       if (mv.canActivateAR) mv.activateAR();
       else { arNotSupported.style.display = "block"; setTimeout(() => arNotSupported.style.display="none", 6000); }
@@ -672,11 +805,23 @@ function launchAR() {
   }
 }
 
+/* Allow user to reposition the model after placement */
+function repositionAR() {
+  setAROverlayState("scan");
+  /* model-viewer re-enters placement mode when the session is still active */
+  if (mv.isPresenting) {
+    try { mv.resetInteractionPrompt(); } catch(e) {}
+    /* Dispatch a synthetic reset so WebXR re-runs hit-test */
+    mv.dispatchEvent(new CustomEvent("reset-placement"));
+  }
+}
+
 /* ══ Camera controls ══ */
 let autoRotating = true;
 function resetCamera() {
   mv.cameraOrbit = "auto auto auto";
   mv.fieldOfView = "auto";
+  mv.cameraTarget = "auto auto auto";
 }
 function toggleAutoRotate() {
   autoRotating = !autoRotating;
