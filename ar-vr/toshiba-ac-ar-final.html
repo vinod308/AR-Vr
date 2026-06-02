@@ -507,12 +507,13 @@ model-viewer::part(default-ar-button) { display: none; }
       camera-controls
       touch-action="none"
       interaction-prompt="auto"
-      auto-rotate
-      auto-rotate-delay="3000"
-      rotation-per-second="15deg"
-      camera-target="0.03m 0.3m 0m"
-      camera-orbit="0deg 75deg 2.5m"
-      field-of-view="30deg"
+      auto-rotate-delay="5000"
+      rotation-per-second="20deg"
+      camera-target="0m 0m 0m"
+      camera-orbit="0deg 82deg 1.4m"
+      min-camera-orbit="auto auto 0.6m"
+      max-camera-orbit="auto auto 3m"
+      field-of-view="35deg"
       shadow-intensity="2"
       shadow-softness="1"
       exposure="1.2"
@@ -793,8 +794,8 @@ function goBack() {
   show("mobile-landing");
   loading.style.display = "flex"; loading.classList.remove("fade");
   setAROverlayState(null);
-  autoRotating = true;
-  mv.setAttribute("auto-rotate", "");
+  autoRotating = false;
+  mv.removeAttribute("auto-rotate");
 }
 
 /* ══ AR launch ══ */
@@ -820,7 +821,7 @@ function repositionAR() {
 }
 
 /* ══ Camera controls ══ */
-let autoRotating = true;
+let autoRotating = false;  /* preview is static by default; user toggles spin on */
 function resetCamera() {
   mv.cameraOrbit = "auto auto auto";
   mv.fieldOfView = "auto";
