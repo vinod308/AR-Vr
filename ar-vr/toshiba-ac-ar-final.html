@@ -629,7 +629,7 @@ model-viewer::part(default-ar-button) { display: none; }
     </div>
     <div class="d-right">
       <div class="d-panel-lbl">Scan with your phone</div>
-      <div class="d-qr-box"><canvas id="d-qr-canvas"></canvas></div>
+      <div class="d-qr-box"><img id="d-qr-canvas" alt="QR Code — scan to open on phone"></div>
       <p class="d-url" id="d-url-txt"></p>
       <div class="d-steps">
         <div class="d-step"><div class="d-step-n">1</div> Open your phone camera app</div>
@@ -649,7 +649,7 @@ model-viewer::part(default-ar-button) { display: none; }
     <div class="qr-title">Scan &amp; View in Your Room</div>
     <p class="qr-sub">Open on your phone to place the Toshiba AC on your actual wall with live AR.</p>
     <div class="qr-box">
-      <canvas id="qr-modal-canvas"></canvas>
+      <img id="qr-modal-canvas" alt="QR Code — scan to open on phone">
       <div class="scan-line"></div>
     </div>
     <div class="qr-url-row">
@@ -665,27 +665,18 @@ model-viewer::part(default-ar-button) { display: none; }
 </div>
 
 <script>
-/* ══ QR via qrserver.com — cached to avoid repeated HTTP requests ══ */
-const _qrCache = {};
-function drawQR(canvas, url, size) {
-  const cacheKey = url + size;
-  canvas.width = size; canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (_qrCache[cacheKey]) {
-    ctx.drawImage(_qrCache[cacheKey], 0, 0, size, size);
-    return;
-  }
-  ctx.fillStyle = "#e8f0f8"; ctx.fillRect(0,0,size,size);
-  const img = new Image(); img.crossOrigin = "anonymous";
-  img.onload  = () => { ctx.clearRect(0,0,size,size); ctx.drawImage(img,0,0,size,size); _qrCache[cacheKey] = img; };
-  img.onerror = () => {
-    ctx.clearRect(0,0,size,size);
-    ctx.fillStyle="#1a3a5c"; ctx.fillRect(0,0,size,size);
-    ctx.fillStyle="white"; ctx.textAlign="center";
-    ctx.font=`bold ${size/12}px sans-serif`; ctx.fillText("QR Code",size/2,size/2-10);
-    ctx.font=`${size/16}px sans-serif`; ctx.fillStyle="rgba(255,255,255,0.5)"; ctx.fillText("(needs internet)",size/2,size/2+12);
-  };
-  img.src=`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&margin=4&color=0C447C&bgcolor=FFFFFF`;
+/* ══ QR generation — always encodes the live GitHub Pages URL ══ */
+const LIVE_URL = "https://vinod308.github.io/AR-Vr/ar-vr/toshiba-ac-ar-final.html";
+function getQRUrl() {
+  /* Always use the live URL so the QR works from any device/network */
+  const h = window.location.hostname;
+  return (h === "localhost" || h === "127.0.0.1" || window.location.protocol === "file:") ? LIVE_URL : window.location.href;
+}
+function drawQR(imgEl, url, size) {
+  /* Direct img.src — no canvas, no CORS, pure black for max scannability */
+  imgEl.style.width = size + "px";
+  imgEl.style.height = size + "px";
+  imgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size*2}x${size*2}&data=${encodeURIComponent(url)}&margin=4&color=000000&bgcolor=FFFFFF`;
 }
 
   }
@@ -706,7 +697,7 @@ window.addEventListener("DOMContentLoaded", () => {
     show("mobile-landing");
   } else {
     show("desktop-landing");
-    const url = window.location.href;
+    const url = getQRUrl();
     document.getElementById("d-url-txt").textContent = url;
     document.getElementById("modal-url-txt").textContent = url;
     drawQR(document.getElementById("d-qr-canvas"), url, 176);
@@ -819,7 +810,7 @@ function toggleAutoRotate() {
 /* ══ Desktop QR modal ══ */
 function openModal() {
   document.getElementById("qr-modal").classList.add("show");
-  drawQR(document.getElementById("qr-modal-canvas"), window.location.href, 184);
+  drawQR(document.getElementById("qr-modal-canvas"), getQRUrl(), 184);
 }
 function closeModal() { document.getElementById("qr-modal").classList.remove("show"); }
 document.getElementById("qr-modal").addEventListener("click", e => {
@@ -827,7 +818,7 @@ document.getElementById("qr-modal").addEventListener("click", e => {
 });
 
 function copyURL() {
-  const url = window.location.href;
+  const url = getQRUrl();
   const btn = document.getElementById("copy-btn");
   const done = () => {
     btn.textContent = "Copied ✓"; btn.classList.add("copied");
