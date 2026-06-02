@@ -16,6 +16,9 @@
 <link rel="preconnect" href="https://ajax.googleapis.com">
 <link rel="preconnect" href="https://api.qrserver.com">
 
+<!-- Client-side QR code — no external API, works offline -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <!-- Google model-viewer — handles Android AR (Scene Viewer) + iPhone AR (Quick Look) + 3D spin -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
@@ -342,7 +345,8 @@ model-viewer::part(default-ar-button) { display: none; }
   box-shadow: 0 0 0 3px rgba(55,138,221,0.25), 0 8px 28px rgba(0,0,0,0.3);
   display: flex; align-items: center; justify-content: center;
 }
-#d-qr-canvas { width: 176px; height: 176px; border-radius: 4px; display: block; }
+#d-qr-canvas, #qr-modal-canvas { display: flex; align-items: center; justify-content: center; }
+#d-qr-canvas canvas, #d-qr-canvas img, #qr-modal-canvas canvas, #qr-modal-canvas img { border-radius: 4px; display: block !important; }
 .d-url { font-size: 10px; color: rgba(255,255,255,0.25); word-break: break-all; line-height: 1.5; margin-bottom: 14px; }
 .d-steps { display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .d-step { display: flex; align-items: center; gap: 9px; font-size: 12px; color: rgba(255,255,255,0.4); }
@@ -386,7 +390,7 @@ model-viewer::part(default-ar-button) { display: none; }
   box-shadow: 0 0 0 4px rgba(55,138,221,0.35), 0 12px 36px rgba(0,0,0,0.4);
   display: flex; align-items: center; justify-content: center; position: relative;
 }
-#qr-modal-canvas { width: 184px; height: 184px; border-radius: 4px; display: block; }
+
 .scan-line {
   position: absolute; left: 12px; right: 12px; height: 2px;
   background: linear-gradient(90deg,transparent,var(--blue2),transparent);
@@ -629,7 +633,7 @@ model-viewer::part(default-ar-button) { display: none; }
     </div>
     <div class="d-right">
       <div class="d-panel-lbl">Scan with your phone</div>
-      <div class="d-qr-box"><img id="d-qr-canvas" alt="QR Code — scan to open on phone"></div>
+      <div class="d-qr-box"><div id="d-qr-canvas"></div></div>
       <p class="d-url" id="d-url-txt"></p>
       <div class="d-steps">
         <div class="d-step"><div class="d-step-n">1</div> Open your phone camera app</div>
@@ -649,7 +653,7 @@ model-viewer::part(default-ar-button) { display: none; }
     <div class="qr-title">Scan &amp; View in Your Room</div>
     <p class="qr-sub">Open on your phone to place the Toshiba AC on your actual wall with live AR.</p>
     <div class="qr-box">
-      <img id="qr-modal-canvas" alt="QR Code — scan to open on phone">
+      <div id="qr-modal-canvas"></div>
       <div class="scan-line"></div>
     </div>
     <div class="qr-url-row">
@@ -665,18 +669,22 @@ model-viewer::part(default-ar-button) { display: none; }
 </div>
 
 <script>
-/* ══ QR generation — always encodes the live GitHub Pages URL ══ */
+/* ══ QR generation — 100% client-side, no API, works offline ══ */
 const LIVE_URL = "https://vinod308.github.io/AR-Vr/ar-vr/toshiba-ac-ar-final.html";
 function getQRUrl() {
-  /* Always use the live URL so the QR works from any device/network */
   const h = window.location.hostname;
   return (h === "localhost" || h === "127.0.0.1" || window.location.protocol === "file:") ? LIVE_URL : window.location.href;
 }
-function drawQR(imgEl, url, size) {
-  /* Direct img.src — no canvas, no CORS, pure black for max scannability */
-  imgEl.style.width = size + "px";
-  imgEl.style.height = size + "px";
-  imgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size*2}x${size*2}&data=${encodeURIComponent(url)}&margin=4&color=000000&bgcolor=FFFFFF`;
+function drawQR(container, url, size) {
+  container.innerHTML = "";
+  new QRCode(container, {
+    text: url,
+    width: size,
+    height: size,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
 }
 
   }
