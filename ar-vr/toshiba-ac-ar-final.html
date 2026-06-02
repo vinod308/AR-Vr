@@ -200,7 +200,7 @@ model-viewer::part(default-ar-button) { display: none; }
 
 /* Manual view control pad */
 .view-pad {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 12px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
 }
 .vp-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
@@ -641,8 +641,10 @@ model-viewer::part(default-ar-button) { display: none; }
       <button class="vp-btn" onclick="nudge(30,0,0)"><span class="ic">⟳</span>Right</button>
       <button class="vp-btn" onclick="nudge(0,-12,0)"><span class="ic">▲</span>Up</button>
       <button class="vp-btn" onclick="nudge(0,12,0)"><span class="ic">▼</span>Down</button>
-      <button class="vp-btn" onclick="zoom(-0.3)"><span class="ic">＋</span>Zoom in</button>
-      <button class="vp-btn" onclick="zoom(0.3)"><span class="ic">－</span>Zoom out</button>
+      <button class="vp-btn" onclick="zoom(-0.3)"><span class="ic">🔍</span>Closer</button>
+      <button class="vp-btn" onclick="zoom(0.3)"><span class="ic">🔭</span>Farther</button>
+      <button class="vp-btn" onclick="resizeModel(1.15)"><span class="ic">＋</span>Size +</button>
+      <button class="vp-btn" onclick="resizeModel(0.87)"><span class="ic">－</span>Size −</button>
     </div>
 
     <div class="ar-actions">
@@ -884,6 +886,14 @@ function resetCamera() {
   mv.cameraOrbit = "auto auto auto";
   mv.fieldOfView = "auto";
   mv.cameraTarget = "auto auto auto";
+  modelScale = 1; mv.setAttribute("scale", "1 1 1");   /* also restore original size */
+}
+
+/* ══ Size + / Size − : actually scale the AC model (preview & WebXR AR) ══ */
+let modelScale = 1;
+function resizeModel(factor) {
+  modelScale = Math.min(Math.max(modelScale * factor, 0.5), 2.5);  /* clamp 0.5×–2.5× */
+  mv.setAttribute("scale", modelScale + " " + modelScale + " " + modelScale);
 }
 function toggleAutoRotate() {
   autoRotating = !autoRotating;
