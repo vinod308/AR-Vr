@@ -213,6 +213,26 @@ model-viewer::part(default-ar-button) { display: none; }
 .vp-btn .ic { font-size: 18px; line-height: 1; }
 .vp-btn:active { background: rgba(55,138,221,0.32); transform: scale(0.93); }
 
+/* In-AR rotate bar (WebXR / Android) — floats over the live camera */
+#ar-rotate-bar {
+  display: none; position: fixed; bottom: 42px; left: 50%; transform: translateX(-50%);
+  z-index: 160; align-items: center; gap: 16px;
+  background: rgba(6,13,24,0.82); backdrop-filter: blur(12px);
+  border: 1px solid rgba(55,138,221,0.4); border-radius: 44px;
+  padding: 10px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+  pointer-events: auto;
+}
+#ar-rotate-bar.visible { display: flex; }
+.arb-btn {
+  width: 54px; height: 54px; border-radius: 50%; border: none;
+  background: linear-gradient(135deg,#185FA5,#0C447C); color: #fff;
+  font-size: 26px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(24,95,165,0.5);
+}
+.arb-btn:active { transform: scale(0.9); }
+.arb-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 0.5px; white-space: nowrap; }
+
 /* Loading overlay */
 #mv-loading {
   position: fixed; inset: 0; z-index: 200;
@@ -563,6 +583,14 @@ model-viewer::part(default-ar-button) { display: none; }
         <div class="spinner" style="width:36px;height:36px;border-width:2px;"></div>
         <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:12px;font-family:Outfit,sans-serif;">Loading AC model…</p>
       </div>
+
+      <!-- In-AR rotate buttons: child of model-viewer so it shows in the WebXR
+           dom-overlay over the live camera (Android). Hidden until a session starts. -->
+      <div id="ar-rotate-bar">
+        <button class="arb-btn" onclick="arRotate(-30)" aria-label="Rotate left">⟲</button>
+        <span class="arb-label">Rotate AC</span>
+        <button class="arb-btn" onclick="arRotate(30)" aria-label="Rotate right">⟳</button>
+      </div>
     </model-viewer>
   </div>
 
@@ -787,16 +815,21 @@ function showARScreen() {
   mv.addEventListener("ar-status", e => {
     const status = e.detail.status;
     if (status === "session-started") {
-      /* AR session just opened: show scanning guidance */
+      /* AR session just opened: show scanning guidance + rotate controls (WebXR) */
       setAROverlayState("scan");
+      showRotateBar(true);
     } else if (status === "object-placed") {
       /* Model anchored to wall: show interaction hints */
       setAROverlayState("placed");
+      showRotateBar(true);
     } else if (status === "not-presenting") {
-      /* User exited AR — dismiss overlay */
+      /* User exited AR — dismiss overlay + rotate bar, reset rotation */
       setAROverlayState(null);
+      showRotateBar(false);
+      arYaw = 0; mv.orientation = "0deg 0deg 0deg";
     } else if (status === "failed") {
       setAROverlayState(null);
+      showRotateBar(false);
       arNotSupported.style.display = "block";
       setTimeout(() => arNotSupported.style.display="none", 6000);
     }
@@ -872,6 +905,20 @@ function nudge(dTheta, dPhi, dRadius) {
   mv.cameraOrbit = theta + "deg " + phi + "deg " + radius + "m";
 }
 function zoom(d) { nudge(0, 0, d); }
+
+/* ══ In-AR rotation (WebXR / Android) ══
+   Rotates the model itself about its vertical axis via the `orientation` attribute,
+   so it works while the AR camera session is live. On iPhone Quick Look the native
+   app is on top, so this bar isn't visible there — users twist with two fingers. */
+let arYaw = 0;
+const arRotateBar = document.getElementById("ar-rotate-bar");
+function showRotateBar(on) {
+  if (arRotateBar) arRotateBar.classList.toggle("visible", !!on);
+}
+function arRotate(deg) {
+  arYaw = (arYaw + deg) % 360;
+  mv.orientation = "0deg 0deg " + arYaw + "deg";  /* roll pitch yaw → yaw = turntable */
+}
 
 /* ══ Desktop QR modal ══ */
 function openModal() {
