@@ -487,7 +487,7 @@ model-viewer::part(default-ar-button) { display: none; }
   <p class="hero-sub">Point your camera at any wall and see the Toshiba Split AC placed in your real room — move it, resize, rotate.</p>
   <div class="badges">
     <span class="badge">🏠 Real Room AR</span>
-    <span class="badge">↔ Resize</span>
+    <span class="badge">📐 Real Size</span>
     <span class="badge">↻ Rotate 360°</span>
     <span class="badge">📱 No App Needed</span>
   </div>
@@ -499,12 +499,12 @@ model-viewer::part(default-ar-button) { display: none; }
     View in My Room
   </button>
   <div style="margin-top:16px;padding:12px 16px;border-radius:12px;background:rgba(55,138,221,0.1);border:1px solid rgba(55,138,221,0.25);text-align:left;max-width:300px;">
-    <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">How to place the AC on your wall:</p>
+    <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">How to place the AC in your room:</p>
     <p style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.7;margin:0;">
       1. Tap <strong style="color:rgba(255,255,255,0.75);">"Place on My Wall"</strong> &amp; allow camera<br>
-      2. Point phone at a <strong style="color:rgba(255,255,255,0.75);">flat wall</strong> — step back ~1m<br>
-      3. AC previews live on wall — <strong style="color:rgba(255,255,255,0.75);">tap to place</strong><br>
-      4. Pinch to resize · Drag to move · Two fingers to rotate
+      2. Point phone at the <strong style="color:rgba(255,255,255,0.75);">floor</strong> — step back ~1m<br>
+      3. AC previews live — <strong style="color:rgba(255,255,255,0.75);">tap to place</strong><br>
+      4. It locks at real size — use ⟲ ⟳ to rotate, walk around to view
     </p>
   </div>
 </div>
@@ -536,8 +536,8 @@ model-viewer::part(default-ar-button) { display: none; }
       src="./toshiba-ac.glb"
       ar
       ar-modes="webxr scene-viewer quick-look"
-      ar-scale="auto"
-      ar-placement="wall"
+      ar-scale="fixed"
+      ar-placement="floor"
       xr-environment
       camera-controls
       touch-action="none"
@@ -604,20 +604,20 @@ model-viewer::part(default-ar-button) { display: none; }
           <path d="M16 16h1v1M19 16v1h-1M16 19h1v1M19 19v1h-1"/>
         </svg>
       </div>
-      <div class="ar-overlay-title">Scanning for a Wall…</div>
-      <div class="ar-overlay-sub">Slowly tilt and move your phone toward a flat vertical surface. Keep at arm's length for best results.</div>
+      <div class="ar-overlay-title">Scanning for the Floor…</div>
+      <div class="ar-overlay-sub">Slowly move your phone and point it at the floor or a flat surface a step in front of you.</div>
     </div>
     <!-- State: tap to place -->
     <div id="ar-state-tap" class="ar-overlay-card" style="display:none;">
       <div class="tap-hint-dot">👆</div>
-      <div class="ar-overlay-title">Wall Detected — Tap to Place</div>
-      <div class="ar-overlay-sub">Tap anywhere on the detected wall surface to place the Toshiba AC.</div>
+      <div class="ar-overlay-title">Surface Detected — Tap to Place</div>
+      <div class="ar-overlay-sub">Tap on the detected surface to place the Toshiba AC, then walk around it.</div>
     </div>
     <!-- State: placed -->
     <div id="ar-state-placed" class="ar-overlay-card" style="display:none;">
       <div class="placed-check">✓</div>
-      <div class="ar-overlay-title">AC Placed on Your Wall</div>
-      <div class="ar-overlay-sub">Drag the AC to move it · Pinch to resize · Two-finger twist to rotate</div>
+      <div class="ar-overlay-title">AC Placed — Locked in Place</div>
+      <div class="ar-overlay-sub">It's pinned at real size. Use the ⟲ ⟳ buttons to rotate · walk around to view it.</div>
       <button class="ar-reposition-btn" onclick="repositionAR()">Got it ✓</button>
     </div>
   </div>
