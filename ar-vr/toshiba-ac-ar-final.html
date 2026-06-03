@@ -215,23 +215,24 @@ model-viewer::part(default-ar-button) { display: none; }
 
 /* In-AR rotate bar (WebXR / Android) — floats over the live camera */
 #ar-rotate-bar {
-  display: none; position: fixed; bottom: 42px; left: 50%; transform: translateX(-50%);
-  z-index: 160; align-items: center; gap: 16px;
-  background: rgba(6,13,24,0.82); backdrop-filter: blur(12px);
+  display: none; position: fixed; bottom: 38px; left: 50%; transform: translateX(-50%);
+  z-index: 160; align-items: center; gap: 9px;
+  background: rgba(6,13,24,0.84); backdrop-filter: blur(12px);
   border: 1px solid rgba(55,138,221,0.4); border-radius: 44px;
-  padding: 10px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+  padding: 9px 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.45);
   pointer-events: auto;
 }
 #ar-rotate-bar.visible { display: flex; }
 .arb-btn {
-  width: 54px; height: 54px; border-radius: 50%; border: none;
+  width: 48px; height: 48px; border-radius: 50%; border: none;
   background: linear-gradient(135deg,#185FA5,#0C447C); color: #fff;
-  font-size: 26px; line-height: 1; cursor: pointer;
+  font-size: 23px; line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 16px rgba(24,95,165,0.5);
 }
 .arb-btn:active { transform: scale(0.9); }
-.arb-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 0.5px; white-space: nowrap; }
+.arb-cap { font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+.arb-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.18); margin: 0 2px; }
 
 /* Loading overlay */
 #mv-loading {
@@ -588,8 +589,12 @@ model-viewer::part(default-ar-button) { display: none; }
            dom-overlay over the live camera (Android). Hidden until a session starts. -->
       <div id="ar-rotate-bar">
         <button class="arb-btn" onclick="arRotate(-30)" aria-label="Rotate left">⟲</button>
-        <span class="arb-label">Rotate AC</span>
         <button class="arb-btn" onclick="arRotate(30)" aria-label="Rotate right">⟳</button>
+        <span class="arb-cap">Rotate</span>
+        <span class="arb-divider"></span>
+        <span class="arb-cap">Size</span>
+        <button class="arb-btn" onclick="resizeModel(0.9)" aria-label="Smaller">－</button>
+        <button class="arb-btn" onclick="resizeModel(1.1)" aria-label="Bigger">＋</button>
       </div>
     </model-viewer>
   </div>
