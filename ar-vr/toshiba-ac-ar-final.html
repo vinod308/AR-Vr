@@ -806,12 +806,19 @@ function setAROverlayState(state) {
   arOverlay.classList.toggle("visible", state !== null);
 }
 
+let arListenersAdded = false;
 function showARScreen() {
   show("ar-screen");
   mv.addEventListener("load", () => {
     setTimeout(() => { loading.classList.add("fade"); setTimeout(() => loading.style.display="none", 500); }, 300);
   }, { once: true });
   setTimeout(() => { loading.classList.add("fade"); setTimeout(() => loading.style.display="none", 500); }, 5000);
+
+  /* Register AR listeners ONCE — re-adding them each visit stacked duplicate
+     handlers, which made the 2nd+ AR session flicker its overlay and re-place
+     the model (the AC wouldn't stay static the second time). */
+  if (arListenersAdded) return;
+  arListenersAdded = true;
 
   /* Persistent ar-status listener — covers every AR session opened from this page */
   mv.addEventListener("ar-status", e => {
