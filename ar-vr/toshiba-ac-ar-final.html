@@ -552,7 +552,7 @@ model-viewer::part(default-ar-button) { display: none; }
       1. Tap <strong style="color:rgba(255,255,255,0.75);">"Place on My Wall"</strong> &amp; allow camera<br>
       2. Point phone at the <strong style="color:rgba(255,255,255,0.75);">floor</strong> — step back ~1m<br>
       3. AC previews live — <strong style="color:rgba(255,255,255,0.75);">tap to place</strong><br>
-      4. It locks at real size — use ⟲ ⟳ to rotate, walk around to view
+      4. Drag to move · pinch to resize · twist to rotate
     </p>
   </div>
 </div>
@@ -584,7 +584,7 @@ model-viewer::part(default-ar-button) { display: none; }
       src="./toshiba-ac.glb"
       ar
       ar-modes="webxr scene-viewer quick-look"
-      ar-scale="fixed"
+      ar-scale="auto"
       ar-placement="floor"
       xr-environment
       camera-controls
@@ -685,8 +685,8 @@ model-viewer::part(default-ar-button) { display: none; }
     <!-- State: placed -->
     <div id="ar-state-placed" class="ar-overlay-card" style="display:none;">
       <div class="placed-check">✓</div>
-      <div class="ar-overlay-title">AC Placed — Locked in Place</div>
-      <div class="ar-overlay-sub">It's pinned at real size. Use the ⟲ ⟳ buttons to rotate · walk around to view it.</div>
+      <div class="ar-overlay-title">AC Placed</div>
+      <div class="ar-overlay-sub">Drag to move · pinch to resize · twist to rotate — or use the ⟲ ⟳ buttons.</div>
       <button class="ar-reposition-btn" onclick="repositionAR()">Got it ✓</button>
     </div>
   </div>
