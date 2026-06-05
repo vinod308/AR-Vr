@@ -430,9 +430,10 @@ model-viewer::part(default-ar-button) { display: none; }
   overflow: hidden;
 }
 #d-qr-canvas, #qr-modal-canvas { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+/* Constrain the QR to the box without distorting it; let qrcodejs decide which
+   element (canvas/img) is visible — don't force both with !important. */
 #d-qr-canvas canvas, #d-qr-canvas img, #qr-modal-canvas canvas, #qr-modal-canvas img {
-  width: 100% !important; height: 100% !important; object-fit: contain;
-  border-radius: 4px; display: block !important;
+  max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: 4px;
 }
 .d-url { font-size: 10px; color: rgba(255,255,255,0.25); word-break: break-all; line-height: 1.5; margin-bottom: 14px; }
 .d-steps { display: flex; flex-direction: column; gap: 8px; text-align: left; }
@@ -818,7 +819,9 @@ model-viewer::part(default-ar-button) { display: none; }
 const LIVE_URL = "https://vinod308.github.io/AR-Vr/ar-vr/toshiba-ac-ar-final.html";
 function getQRUrl() {
   const h = window.location.hostname;
-  return (h === "localhost" || h === "127.0.0.1" || window.location.protocol === "file:") ? LIVE_URL : window.location.href;
+  if (h === "localhost" || h === "127.0.0.1" || window.location.protocol === "file:") return LIVE_URL;
+  /* Clean URL (drop ?v= cache-buster & #hash) → shorter, less-dense, stable QR */
+  return window.location.origin + window.location.pathname;
 }
 function drawQR(container, url, size) {
   container.innerHTML = "";
@@ -832,7 +835,7 @@ function drawQR(container, url, size) {
     height: size,
     colorDark: "#000000",
     colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.L
+    correctLevel: QRCode.CorrectLevel.M
   });
 }
 
