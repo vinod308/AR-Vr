@@ -550,9 +550,9 @@ model-viewer::part(default-ar-button) { display: none; }
     <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">How to place the AC in your room:</p>
     <p style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.7;margin:0;">
       1. Tap <strong style="color:rgba(255,255,255,0.75);">"Place on My Wall"</strong> &amp; allow camera<br>
-      2. Point phone at a <strong style="color:rgba(255,255,255,0.75);">flat wall</strong> — step back ~1m<br>
-      3. AC previews on the wall — <strong style="color:rgba(255,255,255,0.75);">tap to place</strong><br>
-      4. Drag up/down to set height · locked at real size
+      2. Move phone toward the wall — it <strong style="color:rgba(255,255,255,0.75);">auto-detects</strong> the surface<br>
+      3. <strong style="color:rgba(255,255,255,0.75);">Tap once</strong> — AC appears at real size (90cm)<br>
+      4. Drag up/down to set the mounting height
     </p>
   </div>
 </div>
@@ -673,14 +673,14 @@ model-viewer::part(default-ar-button) { display: none; }
           <path d="M16 16h1v1M19 16v1h-1M16 19h1v1M19 19v1h-1"/>
         </svg>
       </div>
-      <div class="ar-overlay-title">Scanning for a Wall…</div>
-      <div class="ar-overlay-sub">Slowly move your phone and point it at a flat wall a step in front of you.</div>
+      <div class="ar-overlay-title">Finding Your Wall Automatically…</div>
+      <div class="ar-overlay-sub">Just move your phone slowly toward the wall — it detects the surface on its own. No measuring needed.</div>
     </div>
     <!-- State: tap to place -->
     <div id="ar-state-tap" class="ar-overlay-card" style="display:none;">
       <div class="tap-hint-dot">👆</div>
-      <div class="ar-overlay-title">Wall Detected — Tap to Place</div>
-      <div class="ar-overlay-sub">Tap on the wall to place the AC, then drag it up or down to set the height.</div>
+      <div class="ar-overlay-title">Wall Found ✓ — Tap Once to Place</div>
+      <div class="ar-overlay-sub">Tap the wall and the AC appears at its real size (90 cm wide). Drag up/down to set the height.</div>
     </div>
     <!-- State: placed -->
     <div id="ar-state-placed" class="ar-overlay-card" style="display:none;">
