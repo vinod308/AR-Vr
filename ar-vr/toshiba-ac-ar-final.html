@@ -528,31 +528,65 @@ model-viewer::part(default-ar-button) { display: none; }
   object-fit: cover; z-index: 10;
   background: #000;
 }
-#ar-screen.ios-cam-active {
-  background: transparent !important;
-}
+
+/* --- ios-cam-active: camera fullscreen, hide ALL regular UI --- */
+#ar-screen.ios-cam-active { background: transparent !important; }
+#ar-screen.ios-cam-active .ar-topbar  { display: none !important; }
+#ar-screen.ios-cam-active .bottom-panel { display: none !important; }
+#ar-screen.ios-cam-active #ar-overlay  { display: none !important; }
+#ar-screen.ios-cam-active #ar-not-supported { display: none !important; }
+#ar-screen.ios-cam-active #mv-loading  { display: none !important; }
+#ar-screen.ios-cam-active #ar-rotate-bar { display: none !important; }
+
+/* Model-viewer: full screen, very light tint so white AC is visible */
 #ar-screen.ios-cam-active .mv-wrap {
   position: fixed; inset: 0; padding-top: 0;
   background: transparent !important; z-index: 20;
-  display: flex; flex-direction: column;
 }
 #ar-screen.ios-cam-active model-viewer {
-  width: 100% !important;
-  flex: 1;
-  height: calc(100vh - 260px) !important;
-  min-height: 300px !important;
-  /* Semi-transparent dark tint: camera shows through AND white AC stands out */
-  background: rgba(4, 10, 22, 0.45) !important;
+  width: 100% !important; height: 100vh !important;
+  min-height: 100vh !important;
+  background: rgba(0, 0, 0, 0.18) !important;
   --poster-color: transparent;
 }
-#ar-screen.ios-cam-active .ar-topbar { z-index: 40; }
-#ar-screen.ios-cam-active .bottom-panel {
-  z-index: 40;
-  position: fixed; bottom: 0; left: 0; right: 0;
+
+/* Show the iOS camera floating controls only in camera mode */
+#ar-screen.ios-cam-active #ios-cam-controls { display: block !important; }
+
+/* --- Floating controls overlay (always fixed, shown via class above) --- */
+#ios-cam-controls {
+  display: none;
+  position: fixed; inset: 0; z-index: 60;
+  pointer-events: none;
 }
-#ar-screen.ios-cam-active #mv-loading { display: none !important; }
-/* iOS cam AR rotate/size bar — always visible */
-#ar-screen.ios-cam-active #ar-rotate-bar { display: flex !important; }
+#ios-cam-close {
+  position: absolute; top: 52px; right: 20px;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: auto;
+}
+#ios-cam-bar {
+  position: absolute; bottom: 54px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,0.58); border-radius: 40px;
+  padding: 10px 22px; border: 1px solid rgba(255,255,255,0.15);
+  pointer-events: auto; white-space: nowrap;
+}
+.ios-cb {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(255,255,255,0.18); color: #fff;
+  border: none; font-size: 24px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: auto;
+}
+.ios-cb:active { background: rgba(55,138,221,0.5); }
+.ios-cb-sep {
+  width: 1px; height: 34px;
+  background: rgba(255,255,255,0.25); margin: 0 4px;
+}
 </style>
 </head>
 <body>
@@ -805,6 +839,18 @@ model-viewer::part(default-ar-button) { display: none; }
       </p>
     </div>
   </div>
+
+  <!-- iOS Camera AR: minimal floating controls, shown only when ios-cam-active is on the ar-screen -->
+  <div id="ios-cam-controls">
+    <button id="ios-cam-close" onclick="stopIOSCameraAR()" aria-label="Exit AR">&#x2715;</button>
+    <div id="ios-cam-bar">
+      <button class="ios-cb" onclick="nudge(-30,0,0)" aria-label="Rotate left">&#x27F2;</button>
+      <button class="ios-cb" onclick="nudge(30,0,0)" aria-label="Rotate right">&#x27F3;</button>
+      <div class="ios-cb-sep"></div>
+      <button class="ios-cb" onclick="resizeModel(0.9)" aria-label="Smaller">&#xFF0D;</button>
+      <button class="ios-cb" onclick="resizeModel(1.1)" aria-label="Bigger">&#xFF0B;</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════ DESKTOP LANDING ══════ -->
@@ -1035,7 +1081,9 @@ function goBack() {
 let iosCameraStream = null;
 
 async function launchIOSCameraAR() {
-  if (autoRotating) { autoRotating = false; mv.removeAttribute("auto-rotate"); }
+  /* Always stop auto-rotate on entry */
+  autoRotating = false;
+  mv.removeAttribute("auto-rotate");
   arYaw = 0;
   mv.orientation = "0deg 0deg 0deg";
   try {
@@ -1046,10 +1094,8 @@ async function launchIOSCameraAR() {
     const vid = document.getElementById("ios-ar-camera");
     vid.srcObject = iosCameraStream;
     vid.style.display = "block";
-    /* Bring model closer so it fills the screen — AC looks real-size on the wall */
     mv.setAttribute("camera-orbit", "0deg 80deg 0.9m");
     document.getElementById("ar-screen").classList.add("ios-cam-active");
-    showRotateBar(true);
   } catch (err) {
     /* Camera denied — fall back to Quick Look */
     if (mv.canActivateAR) mv.activateAR();
@@ -1067,7 +1113,6 @@ function stopIOSCameraAR() {
   vid.srcObject = null;
   document.getElementById("ar-screen").classList.remove("ios-cam-active");
   mv.setAttribute("camera-orbit", "0deg 82deg 1.4m");
-  showRotateBar(false);
 }
 
 /* ══ AR launch ══ */
