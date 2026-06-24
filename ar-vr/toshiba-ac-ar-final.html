@@ -568,6 +568,9 @@ model-viewer::part(default-ar-button) { display: none; }
 /* Show the iOS camera floating controls only in camera mode */
 #ar-screen.ios-cam-active #ios-cam-controls { display: block !important; }
 
+/* Hide model-viewer's built-in "View in My Room" AR button in camera mode */
+#ar-screen.ios-cam-active model-viewer [slot="ar-button"] { display: none !important; }
+
 /* --- Floating controls overlay (always fixed, shown via class above) --- */
 #ios-cam-controls {
   display: none;
@@ -697,8 +700,8 @@ model-viewer::part(default-ar-button) { display: none; }
       rotation-per-second="20deg"
       camera-target="0m 0m 0m"
       camera-orbit="0deg 82deg 1.4m"
-      min-camera-orbit="auto auto 0.6m"
-      max-camera-orbit="auto auto 3m"
+      min-camera-orbit="auto auto 0.4m"
+      max-camera-orbit="auto auto 5m"
       field-of-view="35deg"
       shadow-intensity="1.3"
       shadow-softness="0.85"
@@ -865,8 +868,8 @@ model-viewer::part(default-ar-button) { display: none; }
       <button class="ios-cb" onclick="nudge(-30,0,0)" aria-label="Rotate left">&#x27F2;</button>
       <button class="ios-cb" onclick="nudge(30,0,0)" aria-label="Rotate right">&#x27F3;</button>
       <div class="ios-cb-sep"></div>
-      <button class="ios-cb" onclick="resizeModel(0.95)" aria-label="Smaller">&#xFF0D;</button>
-      <button class="ios-cb" onclick="resizeModel(1.05)" aria-label="Bigger">&#xFF0B;</button>
+      <button class="ios-cb" onclick="nudge(0,0,0.25)" aria-label="Smaller">&#xFF0D;</button>
+      <button class="ios-cb" onclick="nudge(0,0,-0.25)" aria-label="Bigger">&#xFF0B;</button>
     </div>
   </div>
 </div>
@@ -1112,7 +1115,11 @@ async function launchIOSCameraAR() {
     const vid = document.getElementById("ios-ar-camera");
     vid.srcObject = iosCameraStream;
     vid.style.display = "block";
-    mv.setAttribute("camera-orbit", "0deg 80deg 1.3m");
+    mv.setAttribute("camera-orbit", "0deg 80deg 2.2m");
+    mv.setAttribute("shadow-intensity", "0");
+    /* Hide the model-viewer built-in AR button (shows below controls otherwise) */
+    const arSlotBtn = mv.querySelector('[slot="ar-button"]');
+    if (arSlotBtn) arSlotBtn.style.display = "none";
     /* Reset drag position from any previous session */
     iosDragX = 0; iosDragY = 0;
     document.querySelector("#ar-screen .mv-wrap").style.transform = "";
@@ -1138,6 +1145,9 @@ function stopIOSCameraAR() {
   vid.srcObject = null;
   document.getElementById("ar-screen").classList.remove("ios-cam-active");
   mv.setAttribute("camera-orbit", "0deg 82deg 1.4m");
+  mv.setAttribute("shadow-intensity", "1.3");
+  const arSlotBtn = mv.querySelector('[slot="ar-button"]');
+  if (arSlotBtn) arSlotBtn.style.display = "";
   /* Remove drag listeners and reset offset */
   const overlay = document.getElementById("ios-drag-overlay");
   overlay.removeEventListener("touchstart", iosTouchStart);
@@ -1234,7 +1244,7 @@ function nudge(dTheta, dPhi, dRadius) {
   let phi    = o.phi   * 180 / Math.PI + (dPhi   || 0);
   let radius = o.radius + (dRadius || 0);
   phi    = Math.min(Math.max(phi, 15), 105);     // clamp tilt so it can't flip under/over
-  radius = Math.min(Math.max(radius, 0.6), 3);   // clamp zoom range
+  radius = Math.min(Math.max(radius, 0.4), 5);   // clamp zoom range
   mv.cameraOrbit = theta + "deg " + phi + "deg " + radius + "m";
 }
 function zoom(d) { nudge(0, 0, d); }
