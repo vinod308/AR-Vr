@@ -520,6 +520,34 @@ model-viewer::part(default-ar-button) { display: none; }
   #d-qr-btn { width: 100%; justify-content: center; }
   .d-title { font-size: 36px; }
 }
+
+/* ══ iOS Camera Passthrough AR ══ */
+#ios-ar-camera {
+  display: none;
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; z-index: 10;
+  background: #000;
+}
+#ar-screen.ios-cam-active {
+  background: transparent !important;
+}
+#ar-screen.ios-cam-active .mv-wrap {
+  position: fixed; inset: 0; padding-top: 0;
+  background: transparent !important; z-index: 20;
+}
+#ar-screen.ios-cam-active model-viewer {
+  width: 100% !important; height: 100vh !important;
+  min-height: 100vh !important;
+  background: transparent !important;
+  --poster-color: transparent;
+  padding-bottom: 200px;
+}
+#ar-screen.ios-cam-active .ar-topbar { z-index: 40; }
+#ar-screen.ios-cam-active .bottom-panel { z-index: 40; }
+#ar-screen.ios-cam-active #mv-loading { display: none !important; }
+
+/* iOS cam AR rotate/size bar — same pill as Android but always visible */
+#ar-screen.ios-cam-active #ar-rotate-bar { display: flex !important; }
 </style>
 </head>
 <body>
@@ -567,18 +595,18 @@ model-viewer::part(default-ar-button) { display: none; }
     <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">iPhone — How to use AR:</p>
     <p style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.7;margin:0;">
       1. Tap <strong style="color:rgba(255,255,255,0.75);">"View in My Room"</strong> &amp; allow camera<br>
-      2. <strong style="color:rgba(255,255,255,0.75);">Point camera at the floor</strong> and move iPhone slowly to scan<br>
-      3. Once a surface is detected, <strong style="color:rgba(255,255,255,0.75);">tap to place</strong> the AC<br>
-      4. <strong style="color:rgba(255,255,255,0.75);">Pinch</strong> to resize · <strong style="color:rgba(255,255,255,0.75);">two fingers</strong> to rotate
-    </p>
-    <p style="font-size:10px;color:rgba(255,200,100,0.75);margin-top:6px;line-height:1.5;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">
-      ⚠️ Apple's AR view has built-in pinch/rotate controls. The Rotate &amp; Size buttons are only available in the 3D preview below.
+      2. Your live camera opens with the AC overlaid<br>
+      3. Use <strong style="color:rgba(255,255,255,0.75);">⟲ ⟳</strong> to rotate · <strong style="color:rgba(255,255,255,0.75);">Size +/−</strong> to resize<br>
+      4. Drag in 3D viewer to adjust the angle
     </p>
   </div>
 </div>
 
 <!-- ══════ AR VIEWER SCREEN ══════ -->
 <div id="ar-screen" class="screen">
+
+  <!-- iOS camera passthrough feed (shown behind model-viewer on iOS) -->
+  <video id="ios-ar-camera" autoplay playsinline muted></video>
 
   <!-- Loading overlay -->
   <div id="mv-loading">
@@ -766,12 +794,9 @@ model-viewer::part(default-ar-button) { display: none; }
     </div>
     <p class="controls-hint" id="controls-hint">Drag to rotate · pinch to zoom · tap <b style="color:rgba(255,255,255,0.5)">View in Your Room</b> to place it true-to-size in AR</p>
     <!-- iOS Quick Look note — shown only on iPhone/iPad -->
-    <div id="ios-ar-note" style="display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.25);">
-      <p style="font-size:11px;color:rgba(255,200,100,0.85);line-height:1.6;margin:0;">
-        <strong style="color:rgba(255,220,120,1);">iPhone AR tips:</strong>
-        In Apple's AR view — <strong>pinch</strong> to resize · <strong>two fingers</strong> to rotate · <strong>drag</strong> to reposition.
-        The Rotate / Size buttons above only work in the 3D preview (not inside AR).<br>
-        <span style="opacity:0.65;">Point at the floor first to detect a surface, then tilt up toward the wall.</span>
+    <div id="ios-ar-note" style="display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(55,138,221,0.08);border:1px solid rgba(55,138,221,0.25);">
+      <p style="font-size:11px;color:rgba(180,210,255,0.9);line-height:1.6;margin:0;">
+        <strong style="color:#fff;">iPhone AR:</strong> Tap "View in Your Room" — your live camera opens with the AC overlaid. Use ⟲ ⟳ and Size +/− buttons to adjust. Drag the 3D model to set the viewing angle.
       </p>
     </div>
   </div>
@@ -990,11 +1015,58 @@ function showARScreen() {
 }
 
 function goBack() {
+  if (isIOS) stopIOSCameraAR();
   show("mobile-landing");
   loading.style.display = "flex"; loading.classList.remove("fade");
   setAROverlayState(null);
   autoRotating = false;
   mv.removeAttribute("auto-rotate");
+}
+
+/* ══ iOS Camera Passthrough AR ══
+   Quick Look cannot show custom HTML buttons — so on iOS we open the back
+   camera via getUserMedia and overlay model-viewer (transparent bg) on top.
+   Users get the full rotate / size controls, same as Android. */
+let iosCameraStream = null;
+
+async function launchIOSCameraAR() {
+  if (autoRotating) { autoRotating = false; mv.removeAttribute("auto-rotate"); }
+  arYaw = 0;
+  mv.orientation = "0deg 0deg 0deg";
+  try {
+    iosCameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    const vid = document.getElementById("ios-ar-camera");
+    vid.srcObject = iosCameraStream;
+    vid.style.display = "block";
+    /* Make model-viewer canvas transparent so camera shows through */
+    mv.style.setProperty("--poster-color", "transparent");
+    mv.style.background = "transparent";
+    mv.setAttribute("shadow-intensity", "0");
+    mv.setAttribute("environment-image", "neutral");
+    document.getElementById("ar-screen").classList.add("ios-cam-active");
+    showRotateBar(true);
+  } catch (err) {
+    /* Camera denied — fall back to Quick Look */
+    if (mv.canActivateAR) mv.activateAR();
+    else { arNotSupported.style.display = "block"; setTimeout(() => arNotSupported.style.display="none", 6000); }
+  }
+}
+
+function stopIOSCameraAR() {
+  if (iosCameraStream) {
+    iosCameraStream.getTracks().forEach(t => t.stop());
+    iosCameraStream = null;
+  }
+  const vid = document.getElementById("ios-ar-camera");
+  vid.style.display = "none";
+  vid.srcObject = null;
+  document.getElementById("ar-screen").classList.remove("ios-cam-active");
+  mv.style.background = "";
+  mv.setAttribute("shadow-intensity", "1.3");
+  showRotateBar(false);
 }
 
 /* ══ AR launch ══ */
@@ -1003,6 +1075,11 @@ function launchAR() {
   if (autoRotating) { autoRotating = false; mv.removeAttribute("auto-rotate"); }
   arYaw = 0;
   mv.orientation = "0deg 0deg 0deg";
+  if (isIOS) {
+    /* iOS: use camera passthrough with custom controls instead of Quick Look */
+    launchIOSCameraAR();
+    return;
+  }
   if (mv.canActivateAR) {
     mv.activateAR();
   } else if (!mv.loaded) {
