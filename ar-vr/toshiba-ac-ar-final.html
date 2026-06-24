@@ -542,12 +542,26 @@ model-viewer::part(default-ar-button) { display: none; }
 #ar-screen.ios-cam-active .mv-wrap {
   position: fixed; inset: 0; padding-top: 0;
   background: transparent !important; z-index: 20;
+  will-change: transform; /* smooth drag */
 }
 #ar-screen.ios-cam-active model-viewer {
   width: 100% !important; height: 100vh !important;
   min-height: 100vh !important;
   background: rgba(0, 0, 0, 0.18) !important;
   --poster-color: transparent;
+  pointer-events: none; /* drag overlay handles all touch */
+}
+
+/* Drag overlay: sits above model-viewer, below buttons — captures finger drag */
+#ios-drag-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 30;
+  pointer-events: none;
+  /* subtle hint so user knows model is draggable */
+  cursor: grab;
+}
+#ar-screen.ios-cam-active #ios-drag-overlay {
+  display: block; pointer-events: auto;
 }
 
 /* Show the iOS camera floating controls only in camera mode */
@@ -840,6 +854,9 @@ model-viewer::part(default-ar-button) { display: none; }
     </div>
   </div>
 
+  <!-- iOS Camera AR: transparent drag layer — captures touch to move the AC around the screen -->
+  <div id="ios-drag-overlay"></div>
+
   <!-- iOS Camera AR: minimal floating controls, shown only when ios-cam-active is on the ar-screen -->
   <div id="ios-cam-controls">
     <button id="ios-cam-close" onclick="stopIOSCameraAR()" aria-label="Exit AR">&#x2715;</button>
@@ -1095,7 +1112,14 @@ async function launchIOSCameraAR() {
     vid.srcObject = iosCameraStream;
     vid.style.display = "block";
     mv.setAttribute("camera-orbit", "0deg 80deg 0.9m");
+    /* Reset drag position from any previous session */
+    iosDragX = 0; iosDragY = 0;
+    document.querySelector("#ar-screen .mv-wrap").style.transform = "";
     document.getElementById("ar-screen").classList.add("ios-cam-active");
+    /* Attach drag listeners to the transparent overlay */
+    const overlay = document.getElementById("ios-drag-overlay");
+    overlay.addEventListener("touchstart", iosTouchStart, { passive: true });
+    overlay.addEventListener("touchmove",  iosTouchMove,  { passive: false });
   } catch (err) {
     /* Camera denied — fall back to Quick Look */
     if (mv.canActivateAR) mv.activateAR();
@@ -1113,6 +1137,32 @@ function stopIOSCameraAR() {
   vid.srcObject = null;
   document.getElementById("ar-screen").classList.remove("ios-cam-active");
   mv.setAttribute("camera-orbit", "0deg 82deg 1.4m");
+  /* Remove drag listeners and reset offset */
+  const overlay = document.getElementById("ios-drag-overlay");
+  overlay.removeEventListener("touchstart", iosTouchStart);
+  overlay.removeEventListener("touchmove",  iosTouchMove);
+  iosDragX = 0; iosDragY = 0;
+  document.querySelector("#ar-screen .mv-wrap").style.transform = "";
+}
+
+/* ══ iOS Camera drag-to-reposition ══
+   The model-viewer canvas (pointer-events:none in cam mode) sits inside
+   .mv-wrap. We translate the whole wrapper to move the AC on screen. */
+let iosDragX = 0, iosDragY = 0;
+let iosDragOriginX = 0, iosDragOriginY = 0;
+
+function iosTouchStart(e) {
+  if (e.touches.length !== 1) return;
+  iosDragOriginX = e.touches[0].clientX - iosDragX;
+  iosDragOriginY = e.touches[0].clientY - iosDragY;
+}
+function iosTouchMove(e) {
+  if (e.touches.length !== 1) return;
+  e.preventDefault();
+  iosDragX = e.touches[0].clientX - iosDragOriginX;
+  iosDragY = e.touches[0].clientY - iosDragOriginY;
+  document.querySelector("#ar-screen .mv-wrap").style.transform =
+    "translate(" + iosDragX + "px," + iosDragY + "px)";
 }
 
 /* ══ AR launch ══ */
