@@ -538,16 +538,17 @@ model-viewer::part(default-ar-button) { display: none; }
 #ar-screen.ios-cam-active #mv-loading  { display: none !important; }
 #ar-screen.ios-cam-active #ar-rotate-bar { display: none !important; }
 
-/* Model-viewer: full screen, very light tint so white AC is visible */
+/* Model-viewer: full screen, fully transparent — camera shows through, 3D AC is visible */
 #ar-screen.ios-cam-active .mv-wrap {
   position: fixed; inset: 0; padding-top: 0;
   background: transparent !important; z-index: 20;
-  will-change: transform; /* smooth drag */
+  will-change: transform;
+  transition: none !important; /* no CSS transition interfering with JS drag */
 }
 #ar-screen.ios-cam-active model-viewer {
   width: 100% !important; height: 100vh !important;
   min-height: 100vh !important;
-  background: rgba(0, 0, 0, 0.18) !important;
+  background: transparent !important;
   --poster-color: transparent;
   pointer-events: none; /* drag overlay handles all touch */
 }
@@ -864,8 +865,8 @@ model-viewer::part(default-ar-button) { display: none; }
       <button class="ios-cb" onclick="nudge(-30,0,0)" aria-label="Rotate left">&#x27F2;</button>
       <button class="ios-cb" onclick="nudge(30,0,0)" aria-label="Rotate right">&#x27F3;</button>
       <div class="ios-cb-sep"></div>
-      <button class="ios-cb" onclick="resizeModel(0.9)" aria-label="Smaller">&#xFF0D;</button>
-      <button class="ios-cb" onclick="resizeModel(1.1)" aria-label="Bigger">&#xFF0B;</button>
+      <button class="ios-cb" onclick="resizeModel(0.95)" aria-label="Smaller">&#xFF0D;</button>
+      <button class="ios-cb" onclick="resizeModel(1.05)" aria-label="Bigger">&#xFF0B;</button>
     </div>
   </div>
 </div>
@@ -1111,7 +1112,7 @@ async function launchIOSCameraAR() {
     const vid = document.getElementById("ios-ar-camera");
     vid.srcObject = iosCameraStream;
     vid.style.display = "block";
-    mv.setAttribute("camera-orbit", "0deg 80deg 0.9m");
+    mv.setAttribute("camera-orbit", "0deg 80deg 1.3m");
     /* Reset drag position from any previous session */
     iosDragX = 0; iosDragY = 0;
     document.querySelector("#ar-screen .mv-wrap").style.transform = "";
@@ -1150,6 +1151,7 @@ function stopIOSCameraAR() {
    .mv-wrap. We translate the whole wrapper to move the AC on screen. */
 let iosDragX = 0, iosDragY = 0;
 let iosDragOriginX = 0, iosDragOriginY = 0;
+let iosDragRafId = null;
 
 function iosTouchStart(e) {
   if (e.touches.length !== 1) return;
@@ -1159,10 +1161,15 @@ function iosTouchStart(e) {
 function iosTouchMove(e) {
   if (e.touches.length !== 1) return;
   e.preventDefault();
-  iosDragX = e.touches[0].clientX - iosDragOriginX;
-  iosDragY = e.touches[0].clientY - iosDragOriginY;
-  document.querySelector("#ar-screen .mv-wrap").style.transform =
-    "translate(" + iosDragX + "px," + iosDragY + "px)";
+  const x = e.touches[0].clientX - iosDragOriginX;
+  const y = e.touches[0].clientY - iosDragOriginY;
+  if (iosDragRafId) cancelAnimationFrame(iosDragRafId);
+  iosDragRafId = requestAnimationFrame(() => {
+    iosDragX = x; iosDragY = y;
+    const wrap = document.querySelector("#ar-screen .mv-wrap");
+    if (wrap) wrap.style.transform = "translate3d(" + x + "px," + y + "px,0)";
+    iosDragRafId = null;
+  });
 }
 
 /* ══ AR launch ══ */
