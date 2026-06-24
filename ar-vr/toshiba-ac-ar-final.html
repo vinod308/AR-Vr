@@ -552,13 +552,27 @@ model-viewer::part(default-ar-button) { display: none; }
     </svg>
     View in My Room
   </button>
-  <div style="margin-top:16px;padding:12px 16px;border-radius:12px;background:rgba(55,138,221,0.1);border:1px solid rgba(55,138,221,0.25);text-align:left;max-width:300px;">
-    <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">How to place the AC in your room:</p>
+  <!-- Android instructions (shown only on Android) -->
+  <div id="android-tips" style="display:none;margin-top:16px;padding:12px 16px;border-radius:12px;background:rgba(55,138,221,0.1);border:1px solid rgba(55,138,221,0.25);text-align:left;max-width:300px;">
+    <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">Android — How to place the AC:</p>
     <p style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.7;margin:0;">
-      1. Tap <strong style="color:rgba(255,255,255,0.75);">"Place on My Wall"</strong> &amp; allow camera<br>
-      2. Move phone toward the wall — it <strong style="color:rgba(255,255,255,0.75);">auto-detects</strong> the surface<br>
-      3. <strong style="color:rgba(255,255,255,0.75);">Tap once</strong> — AC appears at real size (90cm)<br>
-      4. Drag up/down to set the mounting height
+      1. Tap <strong style="color:rgba(255,255,255,0.75);">"View in My Room"</strong> &amp; allow camera<br>
+      2. Slowly move phone toward the <strong style="color:rgba(255,255,255,0.75);">wall</strong> — it auto-detects the surface<br>
+      3. <strong style="color:rgba(255,255,255,0.75);">Tap the wall</strong> — AC appears at real size (90 cm wide)<br>
+      4. Use ⟲ ⟳ buttons to rotate · Size +/− to resize
+    </p>
+  </div>
+  <!-- iOS instructions (shown only on iPhone/iPad) -->
+  <div id="ios-tips" style="display:none;margin-top:16px;padding:12px 16px;border-radius:12px;background:rgba(55,138,221,0.1);border:1px solid rgba(55,138,221,0.25);text-align:left;max-width:300px;">
+    <p style="font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;">iPhone — How to use AR:</p>
+    <p style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.7;margin:0;">
+      1. Tap <strong style="color:rgba(255,255,255,0.75);">"View in My Room"</strong> &amp; allow camera<br>
+      2. <strong style="color:rgba(255,255,255,0.75);">Point camera at the floor</strong> and move iPhone slowly to scan<br>
+      3. Once a surface is detected, <strong style="color:rgba(255,255,255,0.75);">tap to place</strong> the AC<br>
+      4. <strong style="color:rgba(255,255,255,0.75);">Pinch</strong> to resize · <strong style="color:rgba(255,255,255,0.75);">two fingers</strong> to rotate
+    </p>
+    <p style="font-size:10px;color:rgba(255,200,100,0.75);margin-top:6px;line-height:1.5;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">
+      ⚠️ Apple's AR view has built-in pinch/rotate controls. The Rotate &amp; Size buttons are only available in the 3D preview below.
     </p>
   </div>
 </div>
@@ -750,7 +764,16 @@ model-viewer::part(default-ar-button) { display: none; }
         ⊙ Auto Rotate
       </button>
     </div>
-    <p class="controls-hint">Drag to rotate · pinch to zoom · tap <b style="color:rgba(255,255,255,0.5)">View in Your Room</b> to place it true-to-size in AR</p>
+    <p class="controls-hint" id="controls-hint">Drag to rotate · pinch to zoom · tap <b style="color:rgba(255,255,255,0.5)">View in Your Room</b> to place it true-to-size in AR</p>
+    <!-- iOS Quick Look note — shown only on iPhone/iPad -->
+    <div id="ios-ar-note" style="display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.25);">
+      <p style="font-size:11px;color:rgba(255,200,100,0.85);line-height:1.6;margin:0;">
+        <strong style="color:rgba(255,220,120,1);">iPhone AR tips:</strong>
+        In Apple's AR view — <strong>pinch</strong> to resize · <strong>two fingers</strong> to rotate · <strong>drag</strong> to reposition.
+        The Rotate / Size buttons above only work in the 3D preview (not inside AR).<br>
+        <span style="opacity:0.65;">Point at the floor first to detect a surface, then tilt up toward the wall.</span>
+      </p>
+    </div>
   </div>
 </div>
 
@@ -840,8 +863,12 @@ function drawQR(container, url, size) {
 }
 
 /* ══ Device detection ══ */
-const isMobile = () => /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-  || (window.innerWidth < 768 && "ontouchstart" in window);
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/i.test(navigator.userAgent);
+const isMobile = () => isIOS || isAndroid ||
+  /Mobi/i.test(navigator.userAgent) ||
+  (window.innerWidth < 768 && "ontouchstart" in window);
 
 /* ══ Screen switching ══ */
 function show(id) {
@@ -852,6 +879,19 @@ function show(id) {
 window.addEventListener("DOMContentLoaded", () => {
   if (isMobile()) {
     show("mobile-landing");
+    /* Configure ar-modes and UI per platform */
+    if (isIOS) {
+      mv.setAttribute('ar-modes', 'quick-look');
+      document.getElementById('ios-tips').style.display = 'block';
+      document.getElementById('android-tips').style.display = 'none';
+      document.getElementById('controls-hint').innerHTML =
+        'Drag to rotate · pinch to zoom · tap <b style="color:rgba(255,255,255,0.5)">View in Your Room</b> to open Apple AR';
+      document.getElementById('ios-ar-note').style.display = 'block';
+    } else {
+      mv.setAttribute('ar-modes', 'webxr scene-viewer');
+      document.getElementById('ios-tips').style.display = 'none';
+      document.getElementById('android-tips').style.display = 'block';
+    }
   } else {
     show("desktop-landing");
     const url = getQRUrl();
@@ -914,13 +954,15 @@ function showARScreen() {
   mv.addEventListener("ar-status", e => {
     const status = e.detail.status;
     if (status === "session-started") {
-      /* AR session just opened: show scanning guidance + rotate controls (WebXR) */
+      /* AR session just opened: reset orientation, show scanning guidance */
+      arYaw = 0;
+      mv.orientation = "0deg 0deg 0deg";
       setAROverlayState("scan");
-      showRotateBar(true);
+      showRotateBar(!isIOS);
     } else if (status === "object-placed") {
-      /* Model anchored to wall: show interaction hints */
+      /* Model anchored: show interaction hints */
       setAROverlayState("placed");
-      showRotateBar(true);
+      showRotateBar(!isIOS);
     } else if (status === "not-presenting") {
       /* User exited AR — dismiss overlay + rotate bar, reset rotation */
       setAROverlayState(null);
@@ -957,6 +999,10 @@ function goBack() {
 
 /* ══ AR launch ══ */
 function launchAR() {
+  /* Clean state before every AR session so the model never enters with stale rotation */
+  if (autoRotating) { autoRotating = false; mv.removeAttribute("auto-rotate"); }
+  arYaw = 0;
+  mv.orientation = "0deg 0deg 0deg";
   if (mv.canActivateAR) {
     mv.activateAR();
   } else if (!mv.loaded) {
@@ -1024,7 +1070,7 @@ function showRotateBar(on) {
 }
 function arRotate(deg) {
   arYaw = (arYaw + deg) % 360;
-  mv.orientation = "0deg 0deg " + arYaw + "deg";  /* roll pitch yaw → yaw = turntable */
+  mv.orientation = "0deg " + arYaw + "deg 0deg";  /* pitch YAW roll — Y axis = turntable */
 }
 
 /* ══ True-to-scale dimensions (IKEA-style) ══ */
